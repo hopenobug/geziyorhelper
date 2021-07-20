@@ -31,3 +31,14 @@ func saveFile(filename string, data []byte) error {
 
 	return os.WriteFile(filename, data, fileFileMode)
 }
+
+func pathExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
+}
