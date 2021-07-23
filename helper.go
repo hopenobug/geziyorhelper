@@ -2,6 +2,7 @@ package geziyorhelper
 
 import (
 	"log"
+	"net/http"
 
 	"github.com/geziyor/geziyor"
 	"github.com/geziyor/geziyor/client"
@@ -9,6 +10,12 @@ import (
 
 func SaveFileCallback(filename string) func(*geziyor.Geziyor, *client.Response) {
 	return func(g *geziyor.Geziyor, r *client.Response) {
+		if r.StatusCode != http.StatusOK {
+			if !g.Opt.LogDisabled {
+				log.Printf("get %s error: status %d\n", r.Request.URL, r.StatusCode)
+			}
+			return
+		}
 		err := saveFile(filename, r.Body)
 		if !g.Opt.LogDisabled {
 			if err == nil {
