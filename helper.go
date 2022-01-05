@@ -8,7 +8,9 @@ import (
 	"github.com/geziyor/geziyor/client"
 )
 
-func SaveFileCallback(filename string) func(*geziyor.Geziyor, *client.Response) {
+type AfterSaveFileCallbackType = func(g *geziyor.Geziyor, r *client.Response, filename string, err error)
+
+func SaveFileCallback(filename string, afterSaveCallback AfterSaveFileCallbackType) func(*geziyor.Geziyor, *client.Response) {
 	return func(g *geziyor.Geziyor, r *client.Response) {
 		if r.StatusCode != http.StatusOK {
 			if !g.Opt.LogDisabled {
@@ -24,12 +26,17 @@ func SaveFileCallback(filename string) func(*geziyor.Geziyor, *client.Response) 
 				log.Printf("save %s error: %s\n", filename, err)
 			}
 		}
+
+		if afterSaveCallback != nil {
+			afterSaveCallback(g, r, filename, err)
+		}
 	}
 }
 
 type SaveFileOption struct {
-	NeedDecode      bool
-	SkipExistedFile bool
+	NeedDecode            bool
+	SkipExistedFile       bool
+	AfterSaveFileCallback AfterSaveFileCallbackType
 }
 
 var DefaultSaveFileOption = SaveFileOption{
@@ -56,6 +63,6 @@ func SaveFile(g *geziyor.Geziyor, url, filename string, option ...*SaveFileOptio
 	if !opt.NeedDecode {
 		req.Encoding = "."
 	}
-	g.Do(req, SaveFileCallback(filename))
+	g.Do(req, SaveFileCallback(filename, opt.AfterSaveFileCallback))
 	return
 }
